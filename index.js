@@ -1,6 +1,8 @@
 const express = require('express');
 const { default: mongoose } = require('mongoose');
+const env = require('dotenv').config();
 const app = express();
+const Contato = require('./model/Contato');
 
 app.use(
     express.urlencoded({
@@ -42,10 +44,72 @@ app.post('/contato', async (req, res)=>{
     }
 })
 
+app.get('/contato', async (req, res) => {
+    try {
+        const pessoa = await Contato.find()
+        res.status(200).json(pessoa)
+    } catch(error) {
+        res.status(500).json({error: error})
+    }
+})
+
+app.get('/contato/:id', async (req, res) => {
+    const id = req.params.id
+
+    try {
+        const pessoa = await Contato.findOne({_id: id})
+        if(!pessoa){
+            res.status(422).json({error: 'Esse contato não exite!'})
+            return
+        }
+        res.status(200).json(pessoa)
+    } catch(error) {
+        res.status(500).json({error: error})
+    }
+})
+
+app.delete('/contato/:id', async (req, res) => {
+    const id = req.params.id
+    const pessoa = await Contato.findOne({_id: id})
+    if(!pessoa){
+        res.status(422).json({error: 'Esse contato não exite!'})
+    }
+    try {
+        await Contato.deleteOne({_id: id})
+        res.status(200).json({msg: 'Contato removido com sucesso!'})
+    } catch(error) {
+        res.status(500).json({error: error})
+    }
+})
+
+app.patch('/contato/:id', async (req, res)=>{
+    const id = req.params.id
+
+    const {nome, email, telefone, area, linkedin, idade} = req.body
+    const pessoa = {
+        nome,
+        email,
+        telefone,
+        area,
+        linkedin,
+        idade,
+       
+    }
+    try{
+        const atualizarContato = await Contato.updateOne({_id:id}, pessoa)
+        res.status(200).json(pessoa)
+    }catch(error){
+        res.status(500).json({error: error})
+    }
+})
+
 app.listen(3000)
 console.log('O meu app do campinho está no ar!')
 
-mongoose.connect('mongodb+srv://Thiago:ocANk4bksapPjvf6@campinho.00xpbr0.mongodb.net/agendaCampinho?retryWrites=true&w=majority')
+
+const USER = process.env.USER
+const SENHA = encodeURIComponent(process.env.SENHA)
+mongoose.connect(`mongodb+srv://${USER}:${SENHA}@campinho.00xpbr0.mongodb.net/agendaCampinho?retryWrites=true&w=majority`)
 .then(() => {
     console.log("Banco de dados foi conectado com sucesso!")
 })
